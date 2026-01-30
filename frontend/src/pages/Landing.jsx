@@ -1,394 +1,198 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import Container from "../components/ui/Container";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import Loader from "../components/ui/Loader";
+import ProductCard from "../components/catalog/ProductCard";
+import { productsApi } from "../api/products.api";
+import { categoriesApi } from "../api/categories.api";
 
 export default function Landing() {
-  const { token, user, logout } = useAuth();
+  const [featured, setFeatured] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const [p, c] = await Promise.all([productsApi.list(), categoriesApi.list()]);
+        if (!alive) return;
+
+        setFeatured((p || []).slice(0, 6));
+        setCats((c || []).slice(0, 6));
+      } catch {
+        if (!alive) return;
+        setFeatured([]);
+        setCats([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+
+    load();
+    return () => (alive = false);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      {/* TOP BAR */}
-      <div className="border-b border-white/10 bg-black/40">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2 text-xs text-slate-300">
-          <p>🚚 Envío gratis en compras mayores a $999 • Cambios fáciles 7 días</p>
-          <p className="hidden sm:block">Soporte: soporte@capshop.com</p>
+    <div className="bg-slate-950">
+      {/* HERO */}
+      <div className="relative overflow-hidden border-b border-white/10">
+        <div className="absolute inset-0 opacity-60">
+          <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
         </div>
+
+        <Container className="relative py-14 md:py-20">
+          <div className="grid gap-10 md:grid-cols-2 md:items-center">
+            <div>
+              <Badge className="mb-4">NUEVA TEMPORADA • STREET & URBAN</Badge>
+              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-white">
+                Gorras premium para un look que se nota.
+              </h1>
+              <p className="mt-4 text-slate-300">
+                CapShop es un catálogo real con panel administrativo. Explora productos,
+                filtra por categoría y mira detalles como en una tienda online.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button as={Link} to="/catalog">
+                  Comprar ahora
+                </Button>
+              </div>
+
+              <div className="mt-8 grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="text-xl font-extrabold">24h</div>
+                  <div className="text-xs text-slate-400">Envío rápido</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="text-xl font-extrabold">100%</div>
+                  <div className="text-xs text-slate-400">Pagos seguros</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="text-xl font-extrabold">Top</div>
+                  <div className="text-xs text-slate-400">Calidad urbana</div>
+                </div>
+              </div>
+            </div>
+
+            {/* VISUAL */}
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+              <div className="rounded-2xl overflow-hidden border border-white/10">
+                <img
+                  className="h-72 w-full object-cover"
+                  src="https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1600&q=80"
+                  alt="CapShop hero"
+                  loading="lazy"
+                />
+              </div>
+          
+            </div>
+          </div>
+        </Container>
       </div>
 
-      {/* NAV */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-950 font-black">
-              C
-            </div>
-            <div className="leading-tight">
-              <div className="font-bold tracking-tight">CapShop</div>
-              <div className="text-xs text-slate-400">Gorras premium</div>
-            </div>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
-            <a href="#colecciones" className="hover:text-white">Colecciones</a>
-            <a href="#best" className="hover:text-white">Best sellers</a>
-            <a href="#beneficios" className="hover:text-white">Beneficios</a>
-            <a href="#reviews" className="hover:text-white">Reseñas</a>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Link
-              to="/catalog"
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
-            >
-              Ver catálogo
-            </Link>
-
-            {!token ? (
-              <Link
-                to="/login"
-                className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-950 hover:opacity-90"
-              >
-                Admin
-              </Link>
-            ) : (
-              <>
-                <Link
-                  to={user?.role === "admin" ? "/admin" : "/catalog"}
-                  className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-950 hover:opacity-90"
-                >
-                  {user?.role === "admin" ? "Panel" : "Mi cuenta"}
-                </Link>
-                <button
-                  onClick={logout}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
-                >
-                  Logout
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        {/* glows */}
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[720px] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 right-10 h-72 w-72 rounded-full bg-emerald-400/10 blur-3xl" />
-
-        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 md:grid-cols-2 md:items-center">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-              🔥 Nueva colección 2026
-              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-emerald-200">
-                Drop limitado
-              </span>
-            </p>
-
-            <h1 className="mt-5 text-4xl font-extrabold tracking-tight md:text-5xl">
-              Gorras que se ven
-              <span className="block text-slate-300">tan bien como se sienten.</span>
-            </h1>
-
-            <p className="mt-4 text-slate-300 leading-relaxed">
-              Estilo urbano, fit perfecto y materiales premium. Encuentra tu gorra ideal:
-              snapback, trucker o dad hat. 
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                to="/catalog"
-                className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 hover:opacity-90"
-              >
-                Comprar ahora →
-              </Link>
-
-              <a
-                href="#best"
-                className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold hover:bg-white/10"
-              >
-                Ver best sellers
-              </a>
-            </div>
-
-            <div className="mt-8 grid grid-cols-3 gap-3">
-              <Stat value="Premium" label="Materiales" />
-              <Stat value="Fit" label="Ajuste cómodo" />
-              <Stat value="7 días" label="Cambios" />
-            </div>
-          </div>
-
-          {/* HERO PRODUCT CARD */}
-          <div className="relative">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">Destacado</p>
-                <span className="text-xs text-slate-400">CapShop Edition</span>
-              </div>
-
-              {/* Fake product image */}
-              <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5">
-                <div className="grid h-64 place-items-center">
-                  <div className="text-center">
-                    <div className="mx-auto mb-2 h-14 w-14 rounded-2xl bg-white/10 grid place-items-center">
-                      🧢
-                    </div>
-                    <p className="text-sm text-slate-300">Imagen promo (placeholder)</p>
-                    <p className="text-xs text-slate-400">
-                      Luego puedes reemplazar con una foto real en assets
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-semibold">Snapback “Night Wave”</p>
-                  <p className="text-sm text-slate-300">Bordado premium • Ajustable</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-extrabold">$499</p>
-                  <p className="text-xs text-slate-400">MXN</p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <Link
-                  to="/catalog"
-                  className="flex-1 rounded-xl bg-white px-4 py-2 text-center text-sm font-semibold text-slate-950 hover:opacity-90"
-                >
-                  Ir al catálogo
-                </Link>
-                <a
-                  href="#colecciones"
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
-                >
-                  Ver colecciones
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* COLECCIONES */}
-      <section id="colecciones" className="mx-auto max-w-6xl px-6 py-14">
+      {/* COLLECTIONS */}
+      <Container className="py-14" id="collections">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold">Colecciones</h2>
-            <p className="mt-2 text-slate-300">
-              Elige tu estilo: urbano, clásico o deportivo.
+            <h2 className="text-2xl font-extrabold text-white">Colecciones</h2>
+            <p className="text-slate-300 text-sm mt-1">
+              Filtra por categoría y encuentra tu estilo.
             </p>
           </div>
-          <Link to="/catalog" className="text-sm text-slate-300 hover:text-white underline">
-            Ver todo →
-          </Link>
         </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <CollectionCard
-            title="Snapback"
-            desc="Estructura firme, look urbano."
-            tag="Más vendidas"
-          />
-          <CollectionCard
-            title="Trucker"
-            desc="Frescas, malla trasera, vibe street."
-            tag="Verano"
-          />
-          <CollectionCard
-            title="Dad Hat"
-            desc="Fit relajado, minimal y comfy."
-            tag="Casual"
-          />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {(cats.length ? cats : [{ id: 1, name: "Snapback" }, { id: 2, name: "Trucker" }, { id: 3, name: "Dad Hat" }]).map(
+            (c) => (
+              <Link
+                key={c.id}
+                to={`/catalog?categoryId=${c.id}`}
+                className="group rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-lg font-bold text-white">{c.name}</div>
+                  <div className="text-slate-300 group-hover:text-white">→</div>
+                </div>
+                <p className="mt-2 text-sm text-slate-300">
+                  Explora modelos y detalles por categoría.
+                </p>
+              </Link>
+            )
+          )}
         </div>
-      </section>
+      </Container>
 
-      {/* BEST SELLERS */}
-      <section id="best" className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="text-2xl font-bold">Best sellers</h2>
-        <p className="mt-2 text-slate-300">
-          Los modelos más pedidos esta semana.
-        </p>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <ProductCard name="Midnight Black" price="$449" badge="Top" />
-          <ProductCard name="Ocean Blue" price="$469" badge="Nuevo" />
-          <ProductCard name="Sand Classic" price="$399" badge="Oferta" />
+      {/* FEATURED PRODUCTS */}
+      <Container className="pb-14" id="featured">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-white">Destacados</h2>
+            <p className="text-slate-300 text-sm mt-1">
+              Gorras a tu estilo.
+            </p>
+          </div>
         </div>
 
         <div className="mt-6">
-          <Link
-            to="/catalog"
-            className="inline-flex items-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 hover:opacity-90"
-          >
-            Ver catálogo completo →
-          </Link>
+          {loading ? (
+            <Loader label="Cargando destacados..." />
+          ) : featured.length ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-slate-300">
+              No hay productos para mostrar aún. Crea productos desde el Admin.
+            </div>
+          )}
         </div>
-      </section>
+      </Container>
 
-      {/* BENEFICIOS */}
-      <section id="beneficios" className="mx-auto max-w-6xl px-6 py-14">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
-          <h2 className="text-2xl font-bold">¿Por qué CapShop?</h2>
-          <p className="mt-2 text-slate-300">
-            Detalles que se sienten en cada uso.
-          </p>
-
+      {/* BENEFITS */}
+      <div className="border-t border-white/10 bg-slate-950" id="benefits">
+        <Container className="py-14">
+          <h2 className="text-2xl font-extrabold text-white">¿Por qué CapShop?</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <Feature title="Bordado premium" desc="Diseños nítidos y resistentes al uso diario." />
-            <Feature title="Ajuste cómodo" desc="Bandas internas suaves y fits bien equilibrados." />
-            <Feature title="Calidad real" desc="Materiales duraderos y terminados limpios." />
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="text-lg font-bold text-white">Catálogo real</div>
+              <p className="mt-2 text-sm text-slate-300">
+                Filtros por categoría, detalle de producto y UI tipo tienda.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="text-lg font-bold text-white">Panel Admin</div>
+              <p className="mt-2 text-sm text-slate-300">
+                CRUD completo con auth y roles para gestionar productos/categorías.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="text-lg font-bold text-white">Backend conectado</div>
+              <p className="mt-2 text-sm text-slate-300">
+                Consumo de API real con token en headers automáticamente.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* REVIEWS */}
-      <section id="reviews" className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="text-2xl font-bold">Reseñas</h2>
-        <p className="mt-2 text-slate-300">
-          Opiniones de clientes reales (demo).
-        </p>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <Review
-            name="Carlos M."
-            text="El fit está perfecto y el bordado se ve de lujo. Llegó rápido."
-          />
-          <Review
-            name="Ana P."
-            text="Me encantó la trucker, combina con todo. Se siente premium."
-          />
-          <Review
-            name="Luis R."
-            text="La snapback se ve bien pro, no pierde forma. Recomendadísima."
-          />
-        </div>
-      </section>
-
-      {/* CTA FINAL */}
-      <section className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-white/10 to-white/5 p-8 md:flex md:items-center md:justify-between">
-          <div>
-            <h3 className="text-xl font-bold">Listo para encontrar tu próxima gorra</h3>
-            <p className="mt-2 text-slate-300">
-              Explora el catálogo y filtra por categoría.
-            </p>
+          <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="text-xl font-extrabold text-white">
+                ¿Listo para ver el catálogo?
+              </div>
+              <p className="text-slate-300 text-sm mt-1">
+                Explora, filtra por categoría y abre el detalle de cualquier producto.
+              </p>
+            </div>
           </div>
-          <div className="mt-4 flex gap-3 md:mt-0">
-            <Link
-              to="/catalog"
-              className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 hover:opacity-90"
-            >
-              Ir al catálogo →
-            </Link>
-            <Link
-              to="/login"
-              className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold hover:bg-white/10"
-            >
-              Admin
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-slate-400">
-            CapShop • Gorras premium • {new Date().getFullYear()}
-          </p>
-          <div className="flex gap-3 text-sm">
-            <Link to="/catalog" className="text-slate-300 hover:text-white">Catálogo</Link>
-            <a href="#colecciones" className="text-slate-300 hover:text-white">Colecciones</a>
-            <a href="#reviews" className="text-slate-300 hover:text-white">Reseñas</a>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-/* ---------- Components ---------- */
-
-function Stat({ value, label }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center">
-      <div className="text-xl font-extrabold">{value}</div>
-      <div className="text-xs text-slate-400 mt-1">{label}</div>
-    </div>
-  );
-}
-
-function CollectionCard({ title, desc, tag }) {
-  return (
-    <div className="group rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
-      <div className="flex items-center justify-between">
-        <p className="text-lg font-semibold">{title}</p>
-        <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-slate-300">
-          {tag}
-        </span>
+        </Container>
       </div>
-      <p className="mt-2 text-sm text-slate-300">{desc}</p>
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
-        <div className="grid h-40 place-items-center text-slate-400">
-          🧢 Imagen de {title}
-        </div>
-      </div>
-      <p className="mt-4 text-sm text-slate-300 underline group-hover:text-white">
-        Explorar →
-      </p>
-    </div>
-  );
-}
-
-function ProductCard({ name, price, badge }) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold">{name}</p>
-        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-          {badge}
-        </span>
-      </div>
-
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
-        <div className="grid h-44 place-items-center text-slate-400">
-          🧢 Foto del producto
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-end justify-between">
-        <div>
-          <p className="text-sm text-slate-300">Precio</p>
-          <p className="text-xl font-extrabold">{price}</p>
-        </div>
-        <Link
-          to="/catalog"
-          className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:opacity-90"
-        >
-          Ver
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function Feature({ title, desc }) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-6">
-      <p className="text-lg font-semibold">{title}</p>
-      <p className="mt-2 text-sm text-slate-300 leading-relaxed">{desc}</p>
-    </div>
-  );
-}
-
-function Review({ name, text }) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-      <p className="text-sm text-slate-400">★★★★★</p>
-      <p className="mt-2 text-sm text-slate-200 leading-relaxed">“{text}”</p>
-      <p className="mt-4 text-sm font-semibold">{name}</p>
-      <p className="text-xs text-slate-400">Cliente verificado (demo)</p>
     </div>
   );
 }
